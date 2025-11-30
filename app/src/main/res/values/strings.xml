@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">MapsApp</string>
+    <string name="button_config">Configurações</string>
+    <string name="button_visualizar_trilha">Visualizar trilha</string>
+    <string name="button_registrar_trilha">Registrar trilha</string>
+    <string name="button_creditos">Créditos</string>
+</resources>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center_vertical"
+    android:orientation="vertical"
+    tools:context=".MainActivity">
+
+    <Button
+        android:id="@+id/button_config"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/button_config" />
+
+    <Button
+        android:id="@+id/button_registrar_trilha"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/button_registrar_trilha" />
+
+    <Button
+        android:id="@+id/button_visualizar_trilha"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/button_visualizar_trilha" />
+
+    <Button
+        android:id="@+id/button_creditos"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/button_creditos" />
+</LinearLayout>
