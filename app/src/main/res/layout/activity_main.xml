@@ -7,6 +7,7 @@
     android:layout_height="match_parent"
     android:gravity="center_vertical"
     android:orientation="vertical"
+    android:padding="16dp"
     tools:context=".MainActivity">
 
     <Button
@@ -22,14 +23,15 @@
         android:text="@string/button_registrar_trilha" />
 
     <Button
-        android:id="@+id/button_visualizar_trilha"
+        android:id="@+id/button_visualizar_trilhas"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/button_visualizar_trilha" />
+        android:text="@string/button_visualizar_trilhas" />
 
     <Button
         android:id="@+id/button_creditos"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/button_creditos" />
+
 </LinearLayout>
