@@ -7,7 +7,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class TrilhaDBHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "trilhas.db";
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2;
 
     // Tabela de Trilhas
     public static final String TABLE_TRILHAS = "trilhas";
@@ -21,6 +21,7 @@ public class TrilhaDBHelper extends SQLiteOpenHelper {
     public static final String COLUMN_DETALHE_TRILHA_ID = "trilha_id";
     public static final String COLUMN_DETALHE_DISTANCIA = "distancia_total";
     public static final String COLUMN_DETALHE_VELOCIDADE_MAX = "velocidade_maxima";
+    public static final String COLUMN_DETALHE_VELOCIDADE_MEDIA = "velocidade_media";
     public static final String COLUMN_DETALHE_TEMPO = "tempo_total";
     public static final String COLUMN_DETALHE_CALORIAS = "calorias_totais";
     public static final String COLUMN_DETALHE_PATH = "path_pontos"; // Armazenaremos o JSON dos pontos
@@ -37,6 +38,7 @@ public class TrilhaDBHelper extends SQLiteOpenHelper {
         COLUMN_DETALHE_TRILHA_ID + " INTEGER NOT NULL, " +
         COLUMN_DETALHE_DISTANCIA + " REAL NOT NULL, " +
         COLUMN_DETALHE_VELOCIDADE_MAX + " REAL NOT NULL, " +
+        COLUMN_DETALHE_VELOCIDADE_MEDIA + " REAL NOT NULL, " +
         COLUMN_DETALHE_TEMPO + " TEXT NOT NULL, " +
         COLUMN_DETALHE_CALORIAS + " REAL NOT NULL, " +
         COLUMN_DETALHE_PATH + " TEXT NOT NULL, " +

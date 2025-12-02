@@ -58,6 +58,7 @@ public class DetalhesTrilhaActivity extends FragmentActivity implements OnMapRea
         }
 
         carregarDetalhesTrilha();
+        carregarDataTrilha();
     }
 
     @Override
@@ -104,7 +105,13 @@ public class DetalhesTrilhaActivity extends FragmentActivity implements OnMapRea
                 null, null, null);
 
         if (cursor != null && cursor.moveToFirst()) {
-            binding.tvVelocidadeValor.setText("--");
+            // Check if column exists (for safety with old DB versions)
+            int idxMedia = cursor.getColumnIndex(TrilhaDBHelper.COLUMN_DETALHE_VELOCIDADE_MEDIA);
+            if (idxMedia != -1) {
+                binding.tvVelocidadeValor.setText(String.format(Locale.getDefault(), "%.1f km/h", cursor.getFloat(idxMedia)));
+            } else {
+                binding.tvVelocidadeValor.setText("N/A");
+            }
 
             binding.tvCronometroValor.setText(cursor.getString(cursor.getColumnIndexOrThrow(TrilhaDBHelper.COLUMN_DETALHE_TEMPO)));
             binding.tvDistanciaValor.setText(String.format(Locale.getDefault(), "%.2f km", cursor.getFloat(cursor.getColumnIndexOrThrow(TrilhaDBHelper.COLUMN_DETALHE_DISTANCIA))));
@@ -117,6 +124,21 @@ public class DetalhesTrilhaActivity extends FragmentActivity implements OnMapRea
                 binding.tvCaloriasValor.setText("N/A");
             }
 
+            cursor.close();
+        }
+    }
+
+    private void carregarDataTrilha() {
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        Cursor cursor = db.query(TrilhaDBHelper.TABLE_TRILHAS,
+                new String[]{TrilhaDBHelper.COLUMN_TRILHA_DATA},
+                TrilhaDBHelper.COLUMN_TRILHA_ID + "=?",
+                new String[]{String.valueOf(trilhaId)},
+                null, null, null);
+
+        if (cursor != null && cursor.moveToFirst()) {
+            String data = cursor.getString(cursor.getColumnIndexOrThrow(TrilhaDBHelper.COLUMN_TRILHA_DATA));
+            binding.tvDataTrilha.setText("Data: " + data);
             cursor.close();
         }
     }

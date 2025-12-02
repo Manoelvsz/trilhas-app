@@ -34,6 +34,16 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
+        <TextView
+            android:id="@+id/tv_data_trilha"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:padding="8dp"
+            android:text="Data: --/--/----"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
         <!-- GridLayout para as informações da corrida -->
         <androidx.gridlayout.widget.GridLayout
             android:layout_width="match_parent"
@@ -97,7 +107,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Velocidade"
+                        android:text="Velocidade Média"
                         android:textSize="14sp" />
 
                     <TextView

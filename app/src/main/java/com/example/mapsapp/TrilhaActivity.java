@@ -360,10 +360,15 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
         long trilhaId = db.insert(TrilhaDBHelper.TABLE_TRILHAS, null, trilhaValues);
 
         if (trilhaId != -1) {
+            long millis = SystemClock.uptimeMillis() - startTime;
+            double hours = millis / (1000.0 * 60.0 * 60.0);
+            double averageSpeed = (hours > 0) ? totalDistance / hours : 0;
+
             ContentValues detalhesValues = new ContentValues();
             detalhesValues.put(TrilhaDBHelper.COLUMN_DETALHE_TRILHA_ID, trilhaId);
             detalhesValues.put(TrilhaDBHelper.COLUMN_DETALHE_DISTANCIA, totalDistance);
             detalhesValues.put(TrilhaDBHelper.COLUMN_DETALHE_VELOCIDADE_MAX, maxSpeed);
+            detalhesValues.put(TrilhaDBHelper.COLUMN_DETALHE_VELOCIDADE_MEDIA, averageSpeed);
             detalhesValues.put(TrilhaDBHelper.COLUMN_DETALHE_TEMPO, binding.tvCronometroValor.getText().toString());
             detalhesValues.put(TrilhaDBHelper.COLUMN_DETALHE_CALORIAS, userWeight > 0 ? totalCalories : -1);
 
