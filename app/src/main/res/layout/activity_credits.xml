@@ -46,14 +46,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="200dp"
                 android:layout_marginBottom="16dp"
-                android:scaleType="centerCrop"
+
                 app:srcCompat="@drawable/images" />
 
             <TextView
                 android:id="@+id/textView9"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Integrantes:"
+                android:text="Integrantes: Manoel Souza e Anthony vaz"
                 android:textColor="@color/primary"
                 android:textSize="18sp"
                 android:textStyle="bold" />
