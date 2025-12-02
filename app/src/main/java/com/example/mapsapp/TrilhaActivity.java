@@ -7,6 +7,10 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
@@ -44,7 +48,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallback {
+public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallback, SensorEventListener {
 
     private GoogleMap mMap;
     private ActivityTrilhaBinding binding;
@@ -74,6 +78,19 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
     private static final int NAVIGATION_MODE_NORTH_UP = 0;
     private static final int NAVIGATION_MODE_COURSE_UP = 1;
 
+    // Sensor-related fields
+    private SensorManager sensorManager;
+    private final float[] rotationMatrix = new float[9];
+    private final float[] orientationAngles = new float[3];
+
+    // Smoothing factor for the low-pass filter.
+    private static final float BEARING_SMOOTHING_FACTOR = 0.1f;
+    private float smoothedBearing = 0f;
+
+    // High-frequency handler for smooth camera updates
+    private final Handler cameraUpdateHandler = new Handler(Looper.getMainLooper());
+    private LatLng currentLatLng;
+
 
     private final Runnable timerRunnable = new Runnable() {
         @Override
@@ -91,6 +108,25 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
         }
     };
 
+    private final Runnable cameraUpdateRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (mMap != null && isTracking && navigationModeSetting == NAVIGATION_MODE_COURSE_UP && currentLatLng != null) {
+                CameraPosition newPosition = new CameraPosition.Builder()
+                        .target(currentLatLng)
+                        .zoom(mMap.getCameraPosition().zoom) // Maintain current zoom
+                        .bearing(smoothedBearing)
+                        .tilt(mMap.getCameraPosition().tilt) // Maintain current tilt
+                        .build();
+                // Use moveCamera for frequent, non-animated updates
+                mMap.moveCamera(CameraUpdateFactory.newCameraPosition(newPosition));
+            }
+            // Schedule the next update
+            cameraUpdateHandler.postDelayed(this, 16); // ~60 FPS
+        }
+    };
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -99,10 +135,10 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
         setContentView(binding.getRoot());
 
         dbHelper = new TrilhaDBHelper(this);
-
         loadSettings();
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         if (mapFragment != null) {
@@ -126,35 +162,43 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
         super.onResume();
         loadSettings();
         applyMapSettings();
+        if (isTracking && navigationModeSetting == NAVIGATION_MODE_COURSE_UP) {
+            startSensorUpdates();
+            cameraUpdateHandler.post(cameraUpdateRunnable);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Stop location, sensor, and camera updates to save battery
+        fusedLocationClient.removeLocationUpdates(locationCallback);
+        stopSensorUpdates();
+        cameraUpdateHandler.removeCallbacks(cameraUpdateRunnable);
+
+        if (isTracking) {
+            // If tracking was active, treat it as being stopped to prompt for saving
+            stopTracking();
+        }
     }
 
     private void loadSettings() {
         SharedPreferences prefs = getSharedPreferences("MyPreferences", Context.MODE_PRIVATE);
         userWeight = prefs.getFloat("peso_salvo", 0f);
-
-        // Lê o tipo de mapa salvo (GoogleMap.MAP_TYPE_*)
         mapTypeSetting = prefs.getInt("mapa_tipo_valor", GoogleMap.MAP_TYPE_NORMAL);
-
-        // Lê o modo de navegação salvo (NAV_MODE_*)
-        navigationModeSetting = prefs.getInt("navegacao_modo_valor", -1);
+        navigationModeSetting = prefs.getInt("navegacao_modo_valor", NAVIGATION_MODE_NORTH_UP);
     }
 
     private void applyMapSettings() {
-        if (mMap == null) {
-            return;
-        }
-
-        // Aplica o tipo de mapa (GoogleMap.MAP_TYPE_NORMAL ou SATELLITE)
+        if (mMap == null) return;
         mMap.setMapType(mapTypeSetting);
-
-        // Aplica o modo de navegação (habilita a rotação se não for North Up)
         mMap.getUiSettings().setRotateGesturesEnabled(navigationModeSetting != NAVIGATION_MODE_NORTH_UP);
     }
 
     private void createLocationRequest() {
-        locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
-                .setWaitForAccurateLocation(false)
-                .setMinUpdateIntervalMillis(2000)
+        locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 2000)
+                .setWaitForAccurateLocation(true)
+                .setMinUpdateIntervalMillis(1000)
                 .build();
     }
 
@@ -162,11 +206,10 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
         locationCallback = new LocationCallback() {
             @Override
             public void onLocationResult(LocationResult locationResult) {
-                if (locationResult == null) {
-                    return;
-                }
+                if (locationResult == null) return;
                 for (Location location : locationResult.getLocations()) {
                     if (location != null) {
+                        currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
                         updateMetrics(location);
                     }
                 }
@@ -176,18 +219,12 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
 
     private void updateMetrics(Location currentLocation) {
         float currentSpeedKmh = currentLocation.getSpeed() * 3.6f;
+        if (currentSpeedKmh < 0.5f) currentSpeedKmh = 0.0f;
 
-        if (currentSpeedKmh < 0.5f) {
-            currentSpeedKmh = 0.0f;
-        }
+        if (currentSpeedKmh > maxSpeed) maxSpeed = currentSpeedKmh;
 
-        if (currentSpeedKmh > maxSpeed) {
-            maxSpeed = currentSpeedKmh;
-        }
-
-        if (lastLocation != null && currentSpeedKmh > 0) {
+        if (lastLocation != null) {
             totalDistance += lastLocation.distanceTo(currentLocation) / 1000f;
-
             if (userWeight > 0) {
                 float timeDeltaMinutes = (currentLocation.getTime() - lastLocation.getTime()) / (1000f * 60f);
                 float calorieBurnPerMinute = currentSpeedKmh * userWeight * 0.0175f;
@@ -196,23 +233,19 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
         }
         lastLocation = currentLocation;
 
-        if (isTracking) {
-            CameraPosition.Builder cameraBuilder = new CameraPosition.Builder()
-                    .target(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()))
-                    .zoom(17f);
-
-            // Ajuste aqui também para usar a constante correta para o modo Course Up
-            // A lógica de bearing é para o modo Course Up:
-            if (navigationModeSetting == NAVIGATION_MODE_COURSE_UP && currentLocation.hasBearing() && currentLocation.getSpeed() > 0.5) {
-                cameraBuilder.bearing(currentLocation.getBearing());
-            } else {
-                // Se for North Up, o bearing fica 0
-                cameraBuilder.bearing(0);
-            }
-            mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraBuilder.build()));
+        // In COURSE_UP mode, camera is handled by the cameraUpdateRunnable.
+        // In NORTH_UP mode, we can update it here.
+        if (isTracking && navigationModeSetting == NAVIGATION_MODE_NORTH_UP) {
+            CameraPosition cameraPosition = new CameraPosition.Builder()
+                    .target(currentLatLng)
+                    .zoom(17f) // Or maintain zoom: mMap.getCameraPosition().zoom
+                    .bearing(0)
+                    .tilt(0)
+                    .build();
+            mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
         }
 
-        pathPoints.add(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()));
+        pathPoints.add(currentLatLng);
         if (pathPolyline != null) {
             pathPolyline.setPoints(pathPoints);
         }
@@ -220,7 +253,7 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
         binding.tvVelocidadeValor.setText(String.format(Locale.getDefault(), "%.1f km/h", currentSpeedKmh));
         binding.tvVelocidadeMaxValor.setText(String.format(Locale.getDefault(), "%.1f km/h", maxSpeed));
         binding.tvDistanciaValor.setText(String.format(Locale.getDefault(), "%.2f km", totalDistance));
-        
+
         if (userWeight > 0) {
             binding.tvCaloriasValor.setText(String.format(Locale.getDefault(), "%.0f kcal", totalCalories));
         } else {
@@ -236,28 +269,49 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
         isTracking = true;
         binding.buttonIniciar.setText("Parar");
 
+        // Reset metrics
         totalDistance = 0;
         maxSpeed = 0;
         lastLocation = null;
         totalCalories = 0;
         pathPoints.clear();
-        if (pathPolyline != null) {
-            pathPolyline.remove();
-        }
-        pathPolyline = mMap.addPolyline(new PolylineOptions().color(Color.BLUE).width(10).addAll(pathPoints));
+        currentLatLng = null;
+
+        if (pathPolyline != null) pathPolyline.remove();
+        pathPolyline = mMap.addPolyline(new PolylineOptions().color(Color.BLUE).width(10));
 
         startTime = SystemClock.uptimeMillis();
         timerHandler.postDelayed(timerRunnable, 0);
         fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper());
+
+        if (navigationModeSetting == NAVIGATION_MODE_COURSE_UP) {
+            startSensorUpdates();
+            cameraUpdateHandler.post(cameraUpdateRunnable);
+        }
     }
 
     private void stopTracking() {
         isTracking = false;
         binding.buttonIniciar.setText("Iniciar");
+
         timerHandler.removeCallbacks(timerRunnable);
         fusedLocationClient.removeLocationUpdates(locationCallback);
 
-        showSaveDialog();
+        if (navigationModeSetting == NAVIGATION_MODE_COURSE_UP) {
+            stopSensorUpdates();
+            cameraUpdateHandler.removeCallbacks(cameraUpdateRunnable);
+        }
+
+        // Reset bearing for next time if in course up
+        if (mMap != null && navigationModeSetting == NAVIGATION_MODE_COURSE_UP) {
+             mMap.animateCamera(CameraUpdateFactory.newCameraPosition(
+                new CameraPosition.Builder(mMap.getCameraPosition()).bearing(0).build()
+            ));
+        }
+
+        if (pathPoints.size() > 1) { // Only save if there's a path
+            showSaveDialog();
+        }
     }
 
     private void showSaveDialog() {
@@ -270,12 +324,12 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
         builder.setView(input);
 
         builder.setPositiveButton("Salvar", (dialog, which) -> {
-            String nomeTrilha = input.getText().toString();
+            String nomeTrilha = input.getText().toString().trim();
             if (nomeTrilha.isEmpty()) {
                 Toast.makeText(this, "O nome da trilha não pode ser vazio.", Toast.LENGTH_SHORT).show();
-                return;
+            } else {
+                saveTrilha(nomeTrilha);
             }
-            saveTrilha(nomeTrilha);
         });
         builder.setNegativeButton("Cancelar", (dialog, which) -> dialog.cancel());
 
@@ -299,13 +353,8 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
             detalhesValues.put(TrilhaDBHelper.COLUMN_DETALHE_DISTANCIA, totalDistance);
             detalhesValues.put(TrilhaDBHelper.COLUMN_DETALHE_VELOCIDADE_MAX, maxSpeed);
             detalhesValues.put(TrilhaDBHelper.COLUMN_DETALHE_TEMPO, binding.tvCronometroValor.getText().toString());
-            
-            if (userWeight > 0) {
-                detalhesValues.put(TrilhaDBHelper.COLUMN_DETALHE_CALORIAS, totalCalories);
-            } else {
-                detalhesValues.put(TrilhaDBHelper.COLUMN_DETALHE_CALORIAS, -1);
-            }
-            
+            detalhesValues.put(TrilhaDBHelper.COLUMN_DETALHE_CALORIAS, userWeight > 0 ? totalCalories : -1);
+
             Gson gson = new Gson();
             String pathJson = gson.toJson(pathPoints);
             detalhesValues.put(TrilhaDBHelper.COLUMN_DETALHE_PATH, pathJson);
@@ -325,9 +374,7 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         mMap.getUiSettings().setZoomControlsEnabled(true);
-
         applyMapSettings();
-
         checarPermissaoEConfigurarMapa();
     }
 
@@ -344,9 +391,9 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
             mMap.setMyLocationEnabled(true);
             fusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
                 if (location != null) {
-                    LatLng minhaLocalizacao = new LatLng(location.getLatitude(), location.getLongitude());
                     if (!isTracking) { 
-                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(minhaLocalizacao, 15f));
+                         currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15f));
                     }
                 } else {
                     Toast.makeText(TrilhaActivity.this, "Não foi possível obter a localização atual.", Toast.LENGTH_SHORT).show();
@@ -365,17 +412,45 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
                 configurarMapaComLocalizacao();
             } else {
                 Toast.makeText(this, "Permissão de localização negada.", Toast.LENGTH_LONG).show();
-                LatLng locationPadrao = new LatLng(-23.550520, -46.633308); // São Paulo
-                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(locationPadrao, 10f));
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(-23.550520, -46.633308), 10f)); // São Paulo
             }
         }
     }
 
+    // Sensor-related methods
+    private void startSensorUpdates() {
+        Sensor rotationVectorSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
+        if (rotationVectorSensor != null) {
+            sensorManager.registerListener(this, rotationVectorSensor, SensorManager.SENSOR_DELAY_GAME);
+        }
+    }
+
+    private void stopSensorUpdates() {
+        sensorManager.unregisterListener(this);
+    }
+
     @Override
-    protected void onPause() {
-        super.onPause();
-        if (isTracking) {
-            stopTracking();
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        // Can be ignored for now
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
+            SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values);
+            SensorManager.getOrientation(rotationMatrix, orientationAngles);
+            
+            float rawBearing = (float) Math.toDegrees(orientationAngles[0]);
+            rawBearing = (rawBearing + 360) % 360;
+
+            // Apply low-pass filter to smooth the bearing
+            // Calculate the shortest angle difference
+            float angleDiff = rawBearing - smoothedBearing;
+            if (angleDiff > 180) angleDiff -= 360;
+            if (angleDiff < -180) angleDiff += 360;
+
+            smoothedBearing += BEARING_SMOOTHING_FACTOR * angleDiff;
+            smoothedBearing = (smoothedBearing + 360) % 360;
         }
     }
 }
