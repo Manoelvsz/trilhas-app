@@ -3,6 +3,7 @@ package com.example.mapsapp;
 import android.Manifest;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.sqlite.SQLiteDatabase;
@@ -38,6 +39,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.gson.Gson;
@@ -69,6 +71,9 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
     private float totalDistance = 0;
     private float maxSpeed = 0;
     private float userWeight = -1.0f;
+    private float userHeight = 0f;
+    private int userGender = -1;
+    private String userBirthDate = "";
     private float totalCalories = 0;
     private Polyline pathPolyline;
     private TrilhaDBHelper dbHelper;
@@ -155,7 +160,11 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
             } else if (hasUnsavedTrack) {
                 showSaveDialog();
             } else {
-                startTracking();
+                if (areSettingsValid()) {
+                    startTracking();
+                } else {
+                    showConfigDialog();
+                }
             }
         });
     }
@@ -188,8 +197,29 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
     private void loadSettings() {
         SharedPreferences prefs = getSharedPreferences("MyPreferences", Context.MODE_PRIVATE);
         userWeight = prefs.getFloat("peso_salvo", 0f);
+        userHeight = prefs.getFloat("altura_salvo", 0f);
+        userGender = prefs.getInt("genero_selecionado", -1);
+        userBirthDate = prefs.getString("nascimento_salvo", "");
+
         mapTypeSetting = prefs.getInt("mapa_tipo_valor", GoogleMap.MAP_TYPE_NORMAL);
         navigationModeSetting = prefs.getInt("navegacao_modo_valor", NAVIGATION_MODE_NORTH_UP);
+    }
+
+    private boolean areSettingsValid() {
+        // Verifica se peso, altura e gênero foram definidos
+        return userWeight > 0 && userHeight > 0 && userGender != -1;
+    }
+
+    private void showConfigDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Dados Incompletos")
+                .setMessage("Para iniciar uma corrida, é necessário preencher seu peso, altura e sexo nas configurações.")
+                .setPositiveButton("Ir para Configurações", (dialog, which) -> {
+                    Intent intent = new Intent(TrilhaActivity.this, ConfigActivity.class);
+                    startActivity(intent);
+                })
+                .setNegativeButton("Cancelar", null)
+                .show();
     }
 
     private void applyMapSettings() {
@@ -392,6 +422,16 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        try {
+            boolean success = googleMap.setMapStyle(
+                    MapStyleOptions.loadRawResourceStyle(
+                            this, R.raw.map_style_dark));
+            if (!success) {
+                // Handle map style parsing failure
+            }
+        } catch (Exception e) {
+            // Handle exception
+        }
         mMap.getUiSettings().setZoomControlsEnabled(true);
         applyMapSettings();
         checarPermissaoEConfigurarMapa();

@@ -1,151 +1,179 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center_vertical"
-    android:orientation="vertical"
-    android:paddingLeft="16dp"
-    android:paddingRight="16dp"
-    tools:context=".ConfigActivity">
+    android:background="@color/background"
+    android:fillViewport="true">
 
-    <TextView
-        android:id="@+id/textView"
+    <LinearLayout
+        android:id="@+id/main"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:text="Dados do usuário"
-        android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
+        android:orientation="vertical"
+        android:padding="24dp"
+        tools:context=".ConfigActivity">
 
-    <TextView
-        android:id="@+id/textView2"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Peso" />
-
-    <EditText
-        android:id="@+id/input_peso"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:ems="10"
-        android:inputType="numberDecimal"
-        android:textSize="16sp" />
-
-    <TextView
-        android:id="@+id/textView3"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Altura" />
-
-    <EditText
-        android:id="@+id/input_altura"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:ems="10"
-        android:inputType="numberDecimal"
-        android:textSize="16sp" />
-
-    <TextView
-        android:id="@+id/textView4"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Sexo" />
-
-    <RadioGroup
-        android:id="@+id/RadioGroupSex"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp">
-
-        <RadioButton
-            android:id="@+id/input_masc"
+        <TextView
+            android:id="@+id/textView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Masculino" />
+            android:layout_marginBottom="24dp"
+            android:text="Dados do Usuário"
+            android:textColor="@color/primary"
+            android:textSize="24sp"
+            android:textStyle="bold" />
 
-        <RadioButton
-            android:id="@+id/input_fem"
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Feminino" />
+            android:layout_marginBottom="16dp"
+            android:hint="Peso (kg)"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-        <RadioButton
-            android:id="@+id/input_other"
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/input_peso"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Outro" />
+            android:layout_marginBottom="16dp"
+            android:hint="Altura (m)"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-    </RadioGroup>
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/input_altura"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-    <TextView
-        android:id="@+id/textView5"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Data de nascimento" />
-
-    <EditText
-        android:id="@+id/input_birth"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:ems="10"
-        android:inputType="text" />
-
-    <TextView
-        android:id="@+id/textView6"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Tipo de mapa"
-        android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
-
-    <RadioGroup
-        android:id="@+id/RadioGroupMap"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp">
-
-        <RadioButton
-            android:id="@+id/input_vet"
+        <TextView
+            android:id="@+id/textView4"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Vetorial" />
+            android:layout_marginBottom="8dp"
+            android:text="Sexo"
+            android:textColor="@color/grey_dark" />
 
-        <RadioButton
-            android:id="@+id/input_sat"
+        <RadioGroup
+            android:id="@+id/RadioGroupSex"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Satélite" />
+            android:layout_marginBottom="16dp"
+            android:orientation="horizontal">
 
-    </RadioGroup>
+            <RadioButton
+                android:id="@+id/input_masc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Masculino" />
 
-    <TextView
-        android:id="@+id/textView7"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Forma de navegação"
-        android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
+            <RadioButton
+                android:id="@+id/input_fem"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Feminino" />
 
-    <RadioGroup
-        android:id="@+id/RadioGroupNavigation"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+            <RadioButton
+                android:id="@+id/input_other"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Outro" />
 
-        <RadioButton
-            android:id="@+id/input_north"
+        </RadioGroup>
+
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="North Up" />
+            android:layout_marginBottom="16dp"
+            android:hint="Data de Nascimento"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
-        <RadioButton
-            android:id="@+id/input_course"
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/input_birth"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="date" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:id="@+id/textView6"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Couse Up" />
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="8dp"
+            android:text="Configurações do Mapa"
+            android:textColor="@color/primary"
+            android:textSize="20sp"
+            android:textStyle="bold" />
 
-    </RadioGroup>
+        <TextView
+            android:id="@+id/textViewMapType"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tipo de Mapa"
+            android:textColor="@color/grey_dark" />
 
-</LinearLayout>
+        <RadioGroup
+            android:id="@+id/RadioGroupMap"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/input_vet"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Vetorial" />
+
+            <RadioButton
+                android:id="@+id/input_sat"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Satélite" />
+
+        </RadioGroup>
+
+        <TextView
+            android:id="@+id/textView7"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Forma de Navegação"
+            android:textColor="@color/grey_dark" />
+
+        <RadioGroup
+            android:id="@+id/RadioGroupNavigation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/input_north"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="North Up" />
+
+            <RadioButton
+                android:id="@+id/input_course"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Course Up" />
+
+        </RadioGroup>
+
+    </LinearLayout>
+</ScrollView>

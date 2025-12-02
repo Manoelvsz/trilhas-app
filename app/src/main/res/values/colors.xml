@@ -1,5 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="primary">#1A237E</color> <!-- Navy Blue -->
+    <color name="primary_variant">#000051</color>
+    <color name="on_primary">#FFFFFF</color>
+
+    <color name="secondary">#00BFA5</color> <!-- Teal Accent -->
+    <color name="secondary_variant">#008E76</color>
+    <color name="on_secondary">#000000</color>
+
+    <color name="background">#F5F5F5</color> <!-- Off-white -->
+    <color name="surface">#FFFFFF</color>
+    <color name="on_background">#212121</color>
+    <color name="on_surface">#212121</color>
+
+    <color name="error">#B00020</color>
+    <color name="on_error">#FFFFFF</color>
+
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="grey_light">#E0E0E0</color>
+    <color name="grey_dark">#757575</color>
 </resources>
