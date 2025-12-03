@@ -95,10 +95,10 @@ public class DetalhesTrilhaActivity extends FragmentActivity implements OnMapRea
                     MapStyleOptions.loadRawResourceStyle(
                             this, R.raw.map_style_dark));
             if (!success) {
-                // Handle map style parsing failure
+                // Trata falha no parsing do estilo do mapa
             }
         } catch (Exception e) {
-            // Handle exception
+            // Trata exceção
         }
         mMap.getUiSettings().setZoomControlsEnabled(true);
         mMap.getUiSettings().setRotateGesturesEnabled(false);
@@ -117,7 +117,7 @@ public class DetalhesTrilhaActivity extends FragmentActivity implements OnMapRea
                 null, null, null);
 
         if (cursor != null && cursor.moveToFirst()) {
-            // Check if column exists (for safety with old DB versions)
+            // Verifica se a coluna existe (para segurança com versões antigas do BD)
             int idxMedia = cursor.getColumnIndex(TrilhaDBHelper.COLUMN_DETALHE_VELOCIDADE_MEDIA);
             if (idxMedia != -1) {
                 binding.tvVelocidadeValor.setText(String.format(Locale.getDefault(), "%.1f km/h", cursor.getFloat(idxMedia)));
