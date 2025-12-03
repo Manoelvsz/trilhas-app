@@ -59,7 +59,7 @@ public class ConfigActivity extends AppCompatActivity {
             radioGenero.check(generoIdSalvo);
         }
 
-        int mapaIdSalvo = sharedPreferences.getInt("mapa_id_selecionado", -1);
+        int mapaIdSalvo = sharedPreferences.getInt("mapa_id_selecionado", 0);
         if (mapaIdSalvo != -1 && radioMap != null) {
             radioMap.check(mapaIdSalvo);
         } else if (radioMap != null) {

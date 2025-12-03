@@ -81,7 +81,6 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
     private int mapTypeSetting;
     private int navigationModeSetting;
 
-    private static final int NAVIGATION_MODE_NORTH_UP = 0;
     private static final int NAVIGATION_MODE_COURSE_UP = 1;
 
     // Campos relacionados ao sensor
@@ -202,7 +201,7 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
         userBirthDate = prefs.getString("nascimento_salvo", "");
 
         mapTypeSetting = prefs.getInt("mapa_tipo_valor", GoogleMap.MAP_TYPE_NORMAL);
-        navigationModeSetting = prefs.getInt("navegacao_modo_valor", NAVIGATION_MODE_NORTH_UP);
+        navigationModeSetting = prefs.getInt("navegacao_modo_valor", 0);
     }
 
     private boolean areSettingsValid() {
@@ -225,7 +224,7 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
     private void applyMapSettings() {
         if (mMap == null) return;
         mMap.setMapType(mapTypeSetting);
-        mMap.getUiSettings().setRotateGesturesEnabled(navigationModeSetting != NAVIGATION_MODE_NORTH_UP);
+        mMap.getUiSettings().setRotateGesturesEnabled(navigationModeSetting != 0);
     }
 
     private void createLocationRequest() {
@@ -268,7 +267,7 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
 
         // No modo COURSE_UP, a câmera é controlada pelo cameraUpdateRunnable.
         // No modo NORTH_UP, podemos atualizá-la aqui.
-        if (isTracking && navigationModeSetting == NAVIGATION_MODE_NORTH_UP) {
+        if (isTracking && navigationModeSetting == 0) {
             CameraPosition cameraPosition = new CameraPosition.Builder()
                     .target(currentLatLng)
                     .zoom(17f) // Ou manter zoom: mMap.getCameraPosition().zoom
