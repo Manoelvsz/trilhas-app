@@ -62,11 +62,23 @@ public class ConfigActivity extends AppCompatActivity {
         int mapaIdSalvo = sharedPreferences.getInt("mapa_id_selecionado", -1);
         if (mapaIdSalvo != -1 && radioMap != null) {
             radioMap.check(mapaIdSalvo);
+        } else if (radioMap != null) {
+            // Define "Vetorial" (Normal) como padrão na primeira vez
+            radioMap.check(R.id.input_vet);
+            e.putInt("mapa_id_selecionado", R.id.input_vet);
+            e.putInt("mapa_tipo_valor", GoogleMap.MAP_TYPE_NORMAL);
+            e.apply();
         }
 
         int navegacaoIdSalva = sharedPreferences.getInt("navegacao_id_selecionada", -1);
         if (navegacaoIdSalva != -1 && radioNavigation != null) {
             radioNavigation.check(navegacaoIdSalva);
+        } else if (radioNavigation != null) {
+            // Define "North Up" como padrão na primeira vez
+            radioNavigation.check(R.id.input_north);
+            e.putInt("navegacao_id_selecionada", R.id.input_north);
+            e.putInt("navegacao_modo_valor", NAV_MODE_NORTH_UP);
+            e.apply();
         }
 
 
