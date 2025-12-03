@@ -54,23 +54,7 @@ public class ConfigActivity extends AppCompatActivity {
         if (savedAltura !=0 ) inputAltura.setText(String.valueOf(savedAltura));
         inputNascimento.setText(savedNascimento);
 
-        int generoIdSalvo = sharedPreferences.getInt("genero_selecionado", -1);
-        if (generoIdSalvo != -1 && radioGenero != null) {
-            radioGenero.check(generoIdSalvo);
-        }
-
-        int mapaIdSalvo = sharedPreferences.getInt("mapa_id_selecionado", -1);
-        if (mapaIdSalvo != -1 && radioMap != null) {
-            radioMap.check(mapaIdSalvo);
-        }
-
-        int navegacaoIdSalva = sharedPreferences.getInt("navegacao_id_selecionada", -1);
-        if (navegacaoIdSalva != -1 && radioNavigation != null) {
-            radioNavigation.check(navegacaoIdSalva);
-        }
-
-
-
+        // Set up listeners first
         if (radioGenero != null) {
             radioGenero.setOnCheckedChangeListener((group, checkedId) -> {
                 e.putInt("genero_selecionado", checkedId);
@@ -111,6 +95,28 @@ public class ConfigActivity extends AppCompatActivity {
                 e.putInt("navegacao_modo_valor", navMode);
                 e.apply();
             });
+        }
+
+        // Now load saved values or set defaults
+        int generoIdSalvo = sharedPreferences.getInt("genero_selecionado", -1);
+        if (generoIdSalvo != -1 && radioGenero != null) {
+            radioGenero.check(generoIdSalvo);
+        }
+
+        int mapaIdSalvo = sharedPreferences.getInt("mapa_id_selecionado", -1);
+        if (mapaIdSalvo != -1 && radioMap != null) {
+            radioMap.check(mapaIdSalvo);
+        } else if (radioMap != null) {
+            // Set default to "Vetorial" (Normal map type)
+            radioMap.check(R.id.input_vet);
+        }
+
+        int navegacaoIdSalva = sharedPreferences.getInt("navegacao_id_selecionada", -1);
+        if (navegacaoIdSalva != -1 && radioNavigation != null) {
+            radioNavigation.check(navegacaoIdSalva);
+        } else if (radioNavigation != null) {
+            // Set default to "North Up"
+            radioNavigation.check(R.id.input_north);
         }
     }
 
