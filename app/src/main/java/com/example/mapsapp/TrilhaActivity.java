@@ -8,10 +8,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
@@ -50,7 +46,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallback, SensorEventListener {
+public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
     private ActivityTrilhaBinding binding;
@@ -83,14 +79,10 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
 
     private static final int NAVIGATION_MODE_COURSE_UP = 1;
 
-    // Campos relacionados ao sensor
-    private SensorManager sensorManager;
-    private final float[] rotationMatrix = new float[9];
-    private final float[] orientationAngles = new float[3];
-
-    // Fator de suavização para o filtro passa-baixa.
+    // Fator de suavização para o filtro passa-baixa do bearing GPS.
     private static final float BEARING_SMOOTHING_FACTOR = 0.1f;
     private float smoothedBearing = 0f;
+    private boolean hasValidBearing = false;
 
     // Handler de alta frequência para atualizações suaves da câmera
     private final Handler cameraUpdateHandler = new Handler(Looper.getMainLooper());
@@ -143,7 +135,6 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
         loadSettings();
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
-        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         if (mapFragment != null) {
@@ -174,7 +165,6 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
         loadSettings();
         applyMapSettings();
         if (isTracking && navigationModeSetting == NAVIGATION_MODE_COURSE_UP) {
-            startSensorUpdates();
             cameraUpdateHandler.post(cameraUpdateRunnable);
         }
     }
@@ -182,9 +172,8 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
     @Override
     protected void onPause() {
         super.onPause();
-        // Para atualizações de localização, sensor e câmera para economizar bateria
+        // Para atualizações de localização e câmera para economizar bateria
         fusedLocationClient.removeLocationUpdates(locationCallback);
-        stopSensorUpdates();
         cameraUpdateHandler.removeCallbacks(cameraUpdateRunnable);
 
         if (isTracking) {
@@ -242,6 +231,27 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
                 for (Location location : locationResult.getLocations()) {
                     if (location != null) {
                         currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+                        
+                        // Atualiza o bearing no modo COURSE_UP usando a direção do movimento GPS
+                        if (isTracking && navigationModeSetting == NAVIGATION_MODE_COURSE_UP && location.hasBearing()) {
+                            float rawBearing = location.getBearing();
+                            
+                            if (!hasValidBearing) {
+                                // Primeira leitura válida, inicializa sem suavização
+                                smoothedBearing = rawBearing;
+                                hasValidBearing = true;
+                            } else {
+                                // Aplica filtro passa-baixa para suavizar o bearing
+                                // Calcula a menor diferença de ângulo
+                                float angleDiff = rawBearing - smoothedBearing;
+                                if (angleDiff > 180) angleDiff -= 360;
+                                if (angleDiff < -180) angleDiff += 360;
+                                
+                                smoothedBearing += BEARING_SMOOTHING_FACTOR * angleDiff;
+                                smoothedBearing = (smoothedBearing + 360) % 360;
+                            }
+                        }
+                        
                         updateMetrics(location);
                     }
                 }
@@ -308,6 +318,7 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
         totalCalories = 0;
         pathPoints.clear();
         currentLatLng = null;
+        hasValidBearing = false;
 
         if (pathPolyline != null) pathPolyline.remove();
         pathPolyline = mMap.addPolyline(new PolylineOptions().color(Color.BLUE).width(10));
@@ -317,7 +328,6 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
         fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper());
 
         if (navigationModeSetting == NAVIGATION_MODE_COURSE_UP) {
-            startSensorUpdates();
             cameraUpdateHandler.post(cameraUpdateRunnable);
         }
     }
@@ -329,7 +339,6 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
         fusedLocationClient.removeLocationUpdates(locationCallback);
 
         if (navigationModeSetting == NAVIGATION_MODE_COURSE_UP) {
-            stopSensorUpdates();
             cameraUpdateHandler.removeCallbacks(cameraUpdateRunnable);
         }
 
@@ -472,43 +481,6 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
                 Toast.makeText(this, "Permissão de localização negada.", Toast.LENGTH_LONG).show();
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(-23.550520, -46.633308), 10f)); // São Paulo
             }
-        }
-    }
-
-    // Métodos relacionados ao sensor
-    private void startSensorUpdates() {
-        Sensor rotationVectorSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
-        if (rotationVectorSensor != null) {
-            sensorManager.registerListener(this, rotationVectorSensor, SensorManager.SENSOR_DELAY_GAME);
-        }
-    }
-
-    private void stopSensorUpdates() {
-        sensorManager.unregisterListener(this);
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        // Pode ser ignorado por enquanto
-    }
-
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
-            SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values);
-            SensorManager.getOrientation(rotationMatrix, orientationAngles);
-            
-            float rawBearing = (float) Math.toDegrees(orientationAngles[0]);
-            rawBearing = (rawBearing + 360) % 360;
-
-            // Aplica filtro passa-baixa para suavizar o rumo
-            // Calcula a menor diferença de ângulo
-            float angleDiff = rawBearing - smoothedBearing;
-            if (angleDiff > 180) angleDiff -= 360;
-            if (angleDiff < -180) angleDiff += 360;
-
-            smoothedBearing += BEARING_SMOOTHING_FACTOR * angleDiff;
-            smoothedBearing = (smoothedBearing + 360) % 360;
         }
     }
 }
