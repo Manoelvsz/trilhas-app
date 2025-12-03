@@ -169,7 +169,7 @@ public class TrilhasSalvasActivity extends AppCompatActivity {
             json.addProperty("distancia", cursor.getFloat(cursor.getColumnIndexOrThrow(TrilhaDBHelper.COLUMN_DETALHE_DISTANCIA)));
             json.addProperty("tempo", cursor.getString(cursor.getColumnIndexOrThrow(TrilhaDBHelper.COLUMN_DETALHE_TEMPO)));
             json.addProperty("velocidade_max", cursor.getFloat(cursor.getColumnIndexOrThrow(TrilhaDBHelper.COLUMN_DETALHE_VELOCIDADE_MAX)));
-            // Check if column exists before accessing to avoid crash on old DB versions if not upgraded properly
+            // Verifica se a coluna existe antes de acessar para evitar crash em versões antigas do BD se não foi atualizado corretamente
             int idxMedia = cursor.getColumnIndex(TrilhaDBHelper.COLUMN_DETALHE_VELOCIDADE_MEDIA);
             if (idxMedia != -1) {
                 json.addProperty("velocidade_media", cursor.getFloat(idxMedia));

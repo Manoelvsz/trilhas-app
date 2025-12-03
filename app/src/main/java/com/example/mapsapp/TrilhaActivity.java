@@ -84,16 +84,16 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
     private static final int NAVIGATION_MODE_NORTH_UP = 0;
     private static final int NAVIGATION_MODE_COURSE_UP = 1;
 
-    // Sensor-related fields
+    // Campos relacionados ao sensor
     private SensorManager sensorManager;
     private final float[] rotationMatrix = new float[9];
     private final float[] orientationAngles = new float[3];
 
-    // Smoothing factor for the low-pass filter.
+    // Fator de suavização para o filtro passa-baixa.
     private static final float BEARING_SMOOTHING_FACTOR = 0.1f;
     private float smoothedBearing = 0f;
 
-    // High-frequency handler for smooth camera updates
+    // Handler de alta frequência para atualizações suaves da câmera
     private final Handler cameraUpdateHandler = new Handler(Looper.getMainLooper());
     private LatLng currentLatLng;
 
@@ -120,14 +120,14 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
             if (mMap != null && isTracking && navigationModeSetting == NAVIGATION_MODE_COURSE_UP && currentLatLng != null) {
                 CameraPosition newPosition = new CameraPosition.Builder()
                         .target(currentLatLng)
-                        .zoom(mMap.getCameraPosition().zoom) // Maintain current zoom
+                        .zoom(mMap.getCameraPosition().zoom) // Mantém o zoom atual
                         .bearing(smoothedBearing)
-                        .tilt(mMap.getCameraPosition().tilt) // Maintain current tilt
+                        .tilt(mMap.getCameraPosition().tilt) // Mantém a inclinação atual
                         .build();
-                // Use moveCamera for frequent, non-animated updates
+                // Usa moveCamera para atualizações frequentes e não animadas
                 mMap.moveCamera(CameraUpdateFactory.newCameraPosition(newPosition));
             }
-            // Schedule the next update
+            // Agenda a próxima atualização
             cameraUpdateHandler.postDelayed(this, 16); // ~60 FPS
         }
     };
@@ -183,13 +183,13 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
     @Override
     protected void onPause() {
         super.onPause();
-        // Stop location, sensor, and camera updates to save battery
+        // Para atualizações de localização, sensor e câmera para economizar bateria
         fusedLocationClient.removeLocationUpdates(locationCallback);
         stopSensorUpdates();
         cameraUpdateHandler.removeCallbacks(cameraUpdateRunnable);
 
         if (isTracking) {
-            // If tracking was active, treat it as being stopped to prompt for saving
+            // Se o rastreamento estava ativo, trata como parado para solicitar salvamento
             stopTracking();
         }
     }
@@ -266,12 +266,12 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
         }
         lastLocation = currentLocation;
 
-        // In COURSE_UP mode, camera is handled by the cameraUpdateRunnable.
-        // In NORTH_UP mode, we can update it here.
+        // No modo COURSE_UP, a câmera é controlada pelo cameraUpdateRunnable.
+        // No modo NORTH_UP, podemos atualizá-la aqui.
         if (isTracking && navigationModeSetting == NAVIGATION_MODE_NORTH_UP) {
             CameraPosition cameraPosition = new CameraPosition.Builder()
                     .target(currentLatLng)
-                    .zoom(17f) // Or maintain zoom: mMap.getCameraPosition().zoom
+                    .zoom(17f) // Ou manter zoom: mMap.getCameraPosition().zoom
                     .bearing(0)
                     .tilt(0)
                     .build();
@@ -302,7 +302,7 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
         isTracking = true;
         binding.buttonIniciar.setText("Parar");
 
-        // Reset metrics
+        // Reinicia métricas
         totalDistance = 0;
         maxSpeed = 0;
         lastLocation = null;
@@ -334,14 +334,14 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
             cameraUpdateHandler.removeCallbacks(cameraUpdateRunnable);
         }
 
-        // Reset bearing for next time if in course up
+        // Reinicia o rumo para a próxima vez se estiver no modo course up
         if (mMap != null && navigationModeSetting == NAVIGATION_MODE_COURSE_UP) {
              mMap.animateCamera(CameraUpdateFactory.newCameraPosition(
                 new CameraPosition.Builder(mMap.getCameraPosition()).bearing(0).build()
             ));
         }
 
-        if (pathPoints.size() > 1) { // Only save if there's a path
+        if (pathPoints.size() > 1) { // Só salva se houver um caminho
             hasUnsavedTrack = true;
             binding.buttonIniciar.setText("Salvar");
             showSaveDialog();
@@ -427,10 +427,10 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
                     MapStyleOptions.loadRawResourceStyle(
                             this, R.raw.map_style_dark));
             if (!success) {
-                // Handle map style parsing failure
+                // Trata falha no parsing do estilo do mapa
             }
         } catch (Exception e) {
-            // Handle exception
+            // Trata exceção
         }
         mMap.getUiSettings().setZoomControlsEnabled(true);
         applyMapSettings();
@@ -476,7 +476,7 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
         }
     }
 
-    // Sensor-related methods
+    // Métodos relacionados ao sensor
     private void startSensorUpdates() {
         Sensor rotationVectorSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
         if (rotationVectorSensor != null) {
@@ -490,7 +490,7 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        // Can be ignored for now
+        // Pode ser ignorado por enquanto
     }
 
     @Override
@@ -502,8 +502,8 @@ public class TrilhaActivity extends FragmentActivity implements OnMapReadyCallba
             float rawBearing = (float) Math.toDegrees(orientationAngles[0]);
             rawBearing = (rawBearing + 360) % 360;
 
-            // Apply low-pass filter to smooth the bearing
-            // Calculate the shortest angle difference
+            // Aplica filtro passa-baixa para suavizar o rumo
+            // Calcula a menor diferença de ângulo
             float angleDiff = rawBearing - smoothedBearing;
             if (angleDiff > 180) angleDiff -= 360;
             if (angleDiff < -180) angleDiff += 360;

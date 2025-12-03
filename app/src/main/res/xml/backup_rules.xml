@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?><!--
-   Sample backup rules file; uncomment and customize as necessary.
-   See https://developer.android.com/guide/topics/data/autobackup
-   for details.
-   Note: This file is ignored for devices older than API 31
-   See https://developer.android.com/about/versions/12/backup-restore
+   Arquivo de regras de backup de exemplo; descomente e personalize conforme necessário.
+   Veja https://developer.android.com/guide/topics/data/autobackup
+   para detalhes.
+   Nota: Este arquivo é ignorado para dispositivos mais antigos que API 31
+   Veja https://developer.android.com/about/versions/12/backup-restore
 -->
 <full-backup-content>
     <!--
